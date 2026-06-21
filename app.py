@@ -86,7 +86,7 @@ with layout_col1:
     
     fig = go.Figure()
 
-    # PERBAIKAN ELEMEN 1: Tambahkan Kotak Hijau Pengukur Impeller di Sisi Kiri (Sesuai Katalog Asli)
+    # AREA SHADING: Kotak Hijau Pengukur Impeller di Sisi Kiri (Sesuai Katalog Asli)
     fig.add_shape(
         type="rect",
         x0=0, y0=10, x1=40, y1=54,
@@ -111,7 +111,6 @@ with layout_col1:
             line=dict(color=trim["color"], width=2.5), showlegend=False
         ))
         
-        # Penempatan teks horizontal tepat di dalam kotak hijau di atas garis masing-masing
         fig.add_annotation(
             x=20, y=y_vals[5], text=trim["name"],
             showarrow=False, yshift=8,
@@ -143,7 +142,6 @@ with layout_col1:
             line=dict(color='#1e293b', width=1.2, dash='dash'), showlegend=False
         ))
         
-        # Efek label melingkar berlatar putih memotong garis
         fig.add_annotation(
             x=x_rot[25], y=y_rot[25], text=eff["label"], 
             showarrow=False, font=dict(color="#0f172a", size=10, family="Arial"), 
@@ -159,7 +157,6 @@ with layout_col1:
             line=dict(color='#94a3b8', width=1, dash='dot'), showlegend=False
         ))
         
-        # Label HP dibungkus kotak di ujung bawah grafik
         if hp in [15, 25, 30, 40]:
             fig.add_annotation(
                 x=330, y=h_hp[82], text=f"{hp}<br>HP", 
@@ -167,22 +164,23 @@ with layout_col1:
                 bgcolor="white", bordercolor="#475569", borderwidth=1, borderpad=3
             )
 
-    # PERBAIKAN ELEMEN 3: Titik Kerja Aktual Akurat (Lingkaran Merah Isian Biru Muda)
+    # PERBAIKAN: Format Marker Pengganti yang Valid (Isi Biru Transparan, Bingkai Merah)
     fig.add_trace(go.Scatter(
-        x=[q_actual], y=[h_actual], mode='markers+text', name="Actual Duty Point",
+        x=[q_actual], y=[h_actual], mode='markers', name="Actual Duty Point",
         marker=dict(
-            color='#ef4444', size=15, symbol='circle',
-            line=dict(color='#ef4444', width=3),
-            fillcolor='rgba(14, 165, 233, 0.4)' # Isian biru transparan tengah lingkaran
+            color='rgba(14, 165, 233, 0.4)',  # Ini menggantikan fillcolor (mengisi bagian dalam lingkaran)
+            size=15, 
+            symbol='circle',
+            line=dict(color='#ef4444', width=3) # Bingkai luar merah tebal
         ),
         showlegend=False
     ))
     
-    # Garis Silang Proyeksi Merah Putus-putus ke Sumbu X dan Y
+    # Garis Silang Proyeksi Merah Putus-putus
     fig.add_shape(type="line", x0=q_actual, y0=0, x1=q_actual, y1=h_actual, line=dict(color="#ef4444", width=1.5, dash="dash"))
     fig.add_shape(type="line", x0=0, y0=h_actual, x1=q_actual, y1=h_actual, line=dict(color="#ef4444", width=1.5, dash="dash"))
 
-    # PERBAIKAN ELEMEN 4: Layout Bersih Berbingkai Hitam Sempurna (Format Katalog)
+    # LAYOUT: Gaya Katalog Bersih Berbingkai Hitam Sempurna
     fig.update_layout(
         title={"text": "CENTRIFUGAL PUMP PERFORMANCE CURVE (MULTI-TRIM)", "font": {"color": "#0f172a", "size": 14, "family": "Arial Black"}},
         template="plotly_white",
