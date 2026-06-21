@@ -81,19 +81,20 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- SIDEBAR: FUNGSI INPUT DATA ---
+# --- SIDEBAR: FUNGSI INPUT DATA (Perubahan: Menggunakan Ketik Manual) ---
 st.sidebar.title("🎮 Panel Kontrol & Input")
 st.sidebar.markdown("Sesuaikan parameter operasional pompa di bawah ini:")
 
 st.sidebar.subheader("🎯 Titik Kerja Aktual (Hasil Ukur)")
-q_actual = st.sidebar.slider("System Flow Rate (m³/h)", min_value=0.0, max_value=400.0, value=246.0, step=1.0)
-h_actual = st.sidebar.slider("Total Head (m)", min_value=0.0, max_value=80.0, value=34.0, step=0.5)
-p_cons = st.sidebar.slider("Power Consumption (kW)", min_value=0.0, max_value=15.0, value=3.7, step=0.1)
-pump_eff = st.sidebar.slider("Pump Efficiency (%)", min_value=0.0, max_value=100.0, value=87.3, step=0.1)
+# Mengubah slider menjadi number_input agar bisa diketik langsung secara manual
+q_actual = st.sidebar.number_input("System Flow Rate (m³/h)", min_value=0.0, max_value=400.0, value=246.0, step=1.0)
+h_actual = st.sidebar.number_input("Total Head (m)", min_value=0.0, max_value=80.0, value=34.0, step=0.5)
+p_cons = st.sidebar.number_input("Power Consumption (kW)", min_value=0.0, max_value=15.0, value=3.7, step=0.1)
+pump_eff = st.sidebar.number_input("Pump Efficiency (%)", min_value=0.0, max_value=100.0, value=87.3, step=0.1)
 
 st.sidebar.subheader("⚙️ Kondisi Sensor")
-motor_rpm = st.sidebar.number_input("Motor RPM", value=1450, step=10)
-vibration = st.sidebar.slider("Vibration Level (mm/s)", min_value=0.0, max_value=10.0, value=2.4, step=0.1)
+motor_rpm = st.sidebar.number_input("Motor RPM", min_value=0, max_value=5000, value=1450, step=10)
+vibration = st.sidebar.number_input("Vibration Level (mm/s)", min_value=0.0, max_value=10.0, value=2.4, step=0.1)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("📈 Data Kurva Pabrikan (Edit Tabel)")
@@ -104,7 +105,6 @@ df_curves = pd.DataFrame({
 edited_df = st.sidebar.data_editor(df_curves, num_rows="dynamic")
 
 # --- MAIN DASHBOARD INTERFACE ---
-# Header Utama (Menggunakan Tag HTML untuk Kustomisasi Warna)
 st.markdown("<h1 style='color:#f8fafc; font-weight:700; margin-bottom:25px;'>📊 Pump Performance Analysis Dashboard</h1>", unsafe_allow_html=True)
 
 # Baris 1: 4 buah Metric Cards Premium
@@ -144,24 +144,32 @@ with layout_col1:
     fig.add_shape(type="line", x0=q_actual, y0=0, x1=q_actual, y1=h_actual, line=dict(color="#22d3ee", width=1.5, dash="dash"))
     fig.add_shape(type="line", x0=0, y0=h_actual, x1=q_actual, y1=h_actual, line=dict(color="#22d3ee", width=1.5, dash="dash"))
 
+    # PERBAIKAN VALUEERROR: Menata ulang title font agar didukung penuh oleh Plotly terbaru
     fig.update_layout(
         title={"text": "Professional Pump Curve", "font": {"color": "#f8fafc", "size": 16}},
         template="plotly_dark",
         paper_bgcolor="#1e293b",
         plot_bgcolor="#1e293b",
         margin=dict(l=50, r=30, t=50, b=50),
-        xaxis=dict(title="Flow (m³/h)", range=[0, 400], gridcolor="#334155", titlefont=dict(color="#94a3b8")),
-        yaxis=dict(title="Head (m)", range=[0, 80], gridcolor="#334155", titlefont=dict(color="#94a3b8")),
+        xaxis=dict(
+            title=dict(text="Flow (m³/h)", font=dict(color="#94a3b8")),
+            range=[0, 400], 
+            gridcolor="#334155"
+        ),
+        yaxis=dict(
+            title=dict(text="Head (m)", font=dict(color="#94a3b8")),
+            range=[0, 80], 
+            gridcolor="#334155"
+        ),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=11))
     )
     st.plotly_chart(fig, use_container_width=True)
 
 with layout_col2:
-    # Membuka pembungkus container luar agar menyatu dengan tema kartu
     st.markdown("<div style='background-color:#1e293b; padding:20px; border-radius:12px; border: 1px solid #334155; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);'>", unsafe_allow_html=True)
     st.markdown("<h4 style='margin-top:0; margin-bottom:15px; font-size:15px; color:#94a3b8;'>🎛️ Telemetry Sensors</h4>", unsafe_allow_html=True)
     
-    # Gauge 1: Motor RPM (Diperbaiki ukuran & margin agar tidak bertabrakan)
+    # Gauge 1: Motor RPM
     fig_rpm = go.Figure(go.Indicator(
         mode = "gauge+number",
         value = motor_rpm,
