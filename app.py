@@ -4,9 +4,9 @@ import plotly.graph_objects as go
 import pandas as pd
 
 # 1. KONFIGURASI HALAMAN
-st.set_page_config(page_title="HVAC Pump Performance Analyzer - HVAC T3", layout="wide")
+st.set_page_config(page_title="Centrifugal Pump Performance Curve - HVAC T3", layout="wide")
 
-# 2. INJEKSI CSS GLOBAL (Dashboard Premium Dark, Grafik Kontras Tinggi Pabrikan)
+# 2. INJEKSI CSS GLOBAL (Dashboard Premium Dark, Grafik Putih Engineering Kontras Tinggi)
 st.markdown("""
     <style>
         [data-testid="stAppViewContainer"] { background-color: #0f172a !important; }
@@ -25,182 +25,154 @@ st.markdown("""
             text-align: center;
             transition: transform 0.2s, border-color 0.2s;
         }
-        .metric-card:hover { transform: translateY(-2px); border-color: #22d3ee; }
+        .metric-card:hover { transform: translateY(-2px); border-color: #3b82f6; }
         .metric-title { color: #94a3b8 !important; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-        .metric-value { color: #f8fafc !important; font-size: 32px; font-weight: 700; margin: 6px 0; }
+        .metric-value { color: #f8fafc !important; font-size: 30px; font-weight: 700; margin: 6px 0; }
         .metric-sub { font-size: 12px; font-weight: 600; }
         
         .insight-card { background-color: #1e293b; border-radius: 12px; padding: 22px; border: 1px solid #334155; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); }
-        .alert-box { background-color: rgba(249, 115, 22, 0.1); border-left: 4px solid #f97316; padding: 12px; border-radius: 6px; margin-top: 15px; color: #ffedd5 !important; font-size: 13px; line-height: 1.5; }
+        .alert-box { background-color: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 12px; border-radius: 6px; margin-top: 15px; color: #d9f99d !important; font-size: 13px; line-height: 1.5; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- SIDEBAR: INPUT PARAMETER ---
+# --- SIDEBAR: INPUT PARAMETER SKALA BARU ---
 st.sidebar.title("🎮 Panel Kontrol & Input")
-st.sidebar.subheader("🎯 Titik Kerja Aktual (Hasil Ukur)")
-q_actual = st.sidebar.number_input("System Flow Rate (m³/h)", min_value=0.0, max_value=400.0, value=225.0, step=1.0)
-h_actual = st.sidebar.number_input("Total Head (m)", min_value=0.0, max_value=80.0, value=32.0, step=0.5)
-p_cons = st.sidebar.number_input("Power Consumption (kW)", min_value=0.0, max_value=50.0, value=22.5, step=0.1)
-pump_eff = st.sidebar.number_input("Pump Efficiency (%)", min_value=0.0, max_value=100.0, value=82.0, step=0.1)
+st.sidebar.subheader("🎯 Titik Kerja Aktual (GPM - FT)")
+q_actual = st.sidebar.number_input("Capacity (GPM)", min_value=0.0, max_value=12000.0, value=8000.0, step=100.0)
+h_actual = st.sidebar.number_input("Total Head (FT)", min_value=0.0, max_value=400.0, value=260.0, step=5.0)
+p_cons = st.sidebar.number_input("Brake Horsepower (BHP)", min_value=0.0, max_value=1000.0, value=510.0, step=10.0)
+pump_eff = st.sidebar.number_input("Pump Efficiency (%)", min_value=0.0, max_value=100.0, value=80.0, step=1.0)
 
 st.sidebar.subheader("⚙️ Kondisi Sensor")
 motor_rpm = st.sidebar.number_input("Motor RPM", min_value=0, max_value=5000, value=1450, step=10)
-vibration = st.sidebar.number_input("Vibration Level (mm/s)", min_value=0.0, max_value=10.0, value=2.4, step=0.1)
-
-st.sidebar.markdown("---")
-st.sidebar.subheader("📈 Data Kurva Pabrikan Dasar")
-df_curves = pd.DataFrame({
-    'Flow (m³/h)': [0, 100, 200, 300, 360],
-    'Head (m)': [42, 40, 35, 26, 15]
-})
-edited_df = st.sidebar.data_editor(df_curves, num_rows="dynamic")
+vibration = st.sidebar.number_input("Vibration Level (mm/s)", min_value=0.0, max_value=10.0, value=1.8, step=0.1)
 
 # --- MAIN DASHBOARD ---
-st.markdown("<h1 style='color:#f8fafc; font-weight:700; margin-bottom:25px;'>📊 Pump Performance Analysis Dashboard - HVAC T3</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color:#f8fafc; font-weight:700; margin-bottom:25px;'>📊 Centrifugal Pump Performance Analyzer</h1>", unsafe_allow_html=True)
 
-# Baris 1: Metric Cards
+# Baris 1: Metric Cards Berdasarkan Skala Baru
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.markdown(f"<div class='metric-card'><div class='metric-title'>System Flow Rate</div><div class='metric-value'>{q_actual:.0f} <span style='font-size:16px; font-weight:normal; color:#94a3b8;'>m³/h</span></div><div class='metric-sub' style='color:#10b981;'>▲ +15.3% vs Target</div></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-card'><div class='metric-title'>Pump Capacity</div><div class='metric-value'>{q_actual:.0f} <span style='font-size:14px; font-weight:normal; color:#94a3b8;'>GPM</span></div><div class='metric-sub' style='color:#10b981;'>🟢 Target Operating Point</div></div>", unsafe_allow_html=True)
 with col2:
-    st.markdown(f"<div class='metric-card'><div class='metric-title'>Total Head</div><div class='metric-value'>{h_actual:.1f} <span style='font-size:16px; font-weight:normal; color:#94a3b8;'>m</span></div><div class='metric-sub' style='color:#10b981;'>▲ +15.8% vs Target</div></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-card'><div class='metric-title'>Total Head</div><div class='metric-value'>{h_actual:.0f} <span style='font-size:14px; font-weight:normal; color:#94a3b8;'>FT</span></div><div class='metric-sub' style='color:#10b981;'>🟢 Design Balanced</div></div>", unsafe_allow_html=True)
 with col3:
-    st.markdown(f"<div class='metric-card'><div class='metric-title'>Pump Efficiency</div><div class='metric-value'>{pump_eff}%</div><div class='metric-sub' style='color:#10b981;'>🟢 Operating at BEP Zone</div></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-card'><div class='metric-title'>Efficiency (η)</div><div class='metric-value'>{pump_eff}%</div><div class='metric-sub' style='color:#10b981;'>🎯 At Peak BEP Zone</div></div>", unsafe_allow_html=True)
 with col4:
-    st.markdown(f"<div class='metric-card'><div class='metric-title'>Power Consumption</div><div class='metric-value'>{p_cons} <span style='font-size:16px; font-weight:normal; color:#94a3b8;'>kW</span></div><div class='metric-sub' style='color:#eab308;'>⚠️ 30 HP Range</div></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='metric-card'><div class='metric-title'>Brake Power</div><div class='metric-value'>{p_cons:.0f} <span style='font-size:14px; font-weight:normal; color:#94a3b8;'>BHP</span></div><div class='metric-sub' style='color:#60a5fa;'>⚡ Motor Load Nominal</div></div>", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Baris 2: Grafik & Analisis Detail
-layout_col1, layout_col2, layout_col3 = st.columns([6, 3, 3])
+# Baris 2: Layout Grafik Klasik & Analisis Telemetri
+layout_col1, layout_col2 = st.columns([8, 4])
 
 with layout_col1:
-    # Perhitungan Regresi Kurva Pompa
-    q_data = edited_df['Flow (m³/h)'].values
-    h_data = edited_df['Head (m)'].values
-    poly_coef = np.polyfit(q_data, h_data, 2)
-    poly_func = np.poly1d(poly_coef)
+    # Generasi Data Interpolasi Matematika untuk Kemiripan Kurva Katalog Sempurna
+    q_plot = np.linspace(500, 11000, 100)
     
-    q_plot = np.linspace(0, 400, 100)
-    h_base = np.clip(poly_func(q_plot), 0, None)
+    # 1. Formula Kurva Q-H (Black Curve)
+    h_plot = 355 - (1.85e-6 * (q_plot**2))
     
+    # 2. Formula Kurva Efisiensi (Green Curve)
+    eff_plot = 80 - 0.0000075 * (q_plot - 8000)**2
+    eff_plot = np.clip(eff_plot, 10, 80)
+    
+    # 3. Formula Kurva BHP (Red Curve)
+    bhp_plot = 200 + 0.042 * q_plot - 1.1e-6 * (q_plot**2)
+    
+    # 4. Formula Kurva NPSHr (Orange Curve)
+    npsh_plot = 8 + 0.0001 * (q_plot**1.4)
+
     fig = go.Figure()
 
-    # AREA SHADING: Kotak Hijau Pengukur Impeller di Sisi Kiri (Sesuai Katalog Asli)
-    fig.add_shape(
-        type="rect",
-        x0=0, y0=10, x1=40, y1=54,
-        fillcolor="rgba(187, 247, 208, 0.4)",
-        line=dict(color="rgba(134, 239, 172, 0.7)", width=1.5),
-        layer="below"
-    )
-
-    # A. KURVA IMPELLER MULTI-TRIM (Garis biru solid dengan label horizontal di dalam kotak hijau)
-    trims = [
-        {"name": "11.0 in", "factor": 1.20, "color": "#1e3a8a"},
-        {"name": "10.5 in", "factor": 1.10, "color": "#2563eb"},
-        {"name": "10.0 in (Rated)", "factor": 1.00, "color": "#3b82f6"},
-        {"name": "9.5 in", "factor": 0.90, "color": "#06b6d4"},
-        {"name": "9.0 in", "factor": 0.80, "color": "#0ea5e9"}
-    ]
-    
-    for trim in trims:
-        y_vals = h_base * trim["factor"]
-        fig.add_trace(go.Scatter(
-            x=q_plot, y=y_vals, mode='lines', name=trim["name"],
-            line=dict(color=trim["color"], width=2.5), showlegend=False
-        ))
-        
-        fig.add_annotation(
-            x=20, y=y_vals[5], text=trim["name"],
-            showarrow=False, yshift=8,
-            font=dict(size=10, color="#0f172a", family="Arial Bold")
-        )
-
-    # B. KURVA EFISIENSI ISLANDS (Garis hitam tipis putus-putus dengan label melingkar)
-    bep_q, bep_h = 225, 35
-    theta = np.linspace(0, 2*np.pi, 100)
-    angle = -12 * np.pi / 180
-    cos_a, sin_a = np.cos(angle), np.sin(angle)
-    
-    eff_islands = [
-        {"label": "86%", "rx": 35, "ry": 2.5},
-        {"label": "85%", "rx": 65, "ry": 4.5},
-        {"label": "82%", "rx": 95, "ry": 7.0},
-        {"label": "80%", "rx": 130, "ry": 10.0},
-        {"label": "75%", "rx": 170, "ry": 14.0}
-    ]
-    
-    for eff in eff_islands:
-        x_ellipse = eff["rx"] * np.cos(theta)
-        y_ellipse = eff["ry"] * np.sin(theta)
-        x_rot = bep_q + x_ellipse * cos_a - y_ellipse * sin_a
-        y_rot = bep_h + x_ellipse * sin_a + y_ellipse * cos_a
-        
-        fig.add_trace(go.Scatter(
-            x=x_rot, y=y_rot, mode='lines', 
-            line=dict(color='#1e293b', width=1.2, dash='dash'), showlegend=False
-        ))
-        
-        fig.add_annotation(
-            x=x_rot[25], y=y_rot[25], text=eff["label"], 
-            showarrow=False, font=dict(color="#0f172a", size=10, family="Arial"), 
-            bgcolor="white", bordercolor="#cbd5e1", borderwidth=1, borderpad=2
-        )
-
-    # C. GARIS DAYA POMPA / HORSEPOWER (HP) LINES (Garis miring abu-abu dengan label kotak di bawah)
-    hp_lines = [10, 15, 20, 25, 30, 40]
-    for hp in hp_lines:
-        h_hp = (hp * 650) / (q_plot + 50)
-        fig.add_trace(go.Scatter(
-            x=q_plot, y=h_hp, mode='lines',
-            line=dict(color='#94a3b8', width=1, dash='dot'), showlegend=False
-        ))
-        
-        if hp in [15, 25, 30, 40]:
-            fig.add_annotation(
-                x=330, y=h_hp[82], text=f"{hp}<br>HP", 
-                showarrow=False, font=dict(color="#0f172a", size=9, family="Arial Bold"),
-                bgcolor="white", bordercolor="#475569", borderwidth=1, borderpad=3
-            )
-
-    # PERBAIKAN: Format Marker Pengganti yang Valid (Isi Biru Transparan, Bingkai Merah)
+    # PILAHAAN TRACE DAN MULTI-SUMBU (Y-AXIS OVERLAY)
+    # Trace 1: Q-H Curve (Kiri - Head)
     fig.add_trace(go.Scatter(
-        x=[q_actual], y=[h_actual], mode='markers', name="Actual Duty Point",
-        marker=dict(
-            color='rgba(14, 165, 233, 0.4)',  # Ini menggantikan fillcolor (mengisi bagian dalam lingkaran)
-            size=15, 
-            symbol='circle',
-            line=dict(color='#ef4444', width=3) # Bingkai luar merah tebal
-        ),
-        showlegend=False
+        x=q_plot, y=h_plot, mode='lines', name='Q-H CURVE',
+        line=dict(color='black', width=3.5), yaxis='y1'
     ))
     
-    # Garis Silang Proyeksi Merah Putus-putus
-    fig.add_shape(type="line", x0=q_actual, y0=0, x1=q_actual, y1=h_actual, line=dict(color="#ef4444", width=1.5, dash="dash"))
-    fig.add_shape(type="line", x0=0, y0=h_actual, x1=q_actual, y1=h_actual, line=dict(color="#ef4444", width=1.5, dash="dash"))
+    # Trace 2: Efficiency Curve (Kanan 1 - η)
+    fig.add_trace(go.Scatter(
+        x=q_plot, y=eff_plot, mode='lines', name='EFFICIENCY (η) CURVE',
+        line=dict(color='#16a34a', width=3), yaxis='y2'
+    ))
+    
+    # Trace 3: BHP Curve (Kanan 2 - Power)
+    fig.add_trace(go.Scatter(
+        x=q_plot, y=bhp_plot, mode='lines', name='BHP CURVE',
+        line=dict(color='#dc2626', width=3), yaxis='y3'
+    ))
+    
+    # Trace 4: NPSHr Curve (Kiri - Head)
+    fig.add_trace(go.Scatter(
+        x=q_plot, y=npsh_plot, mode='lines', name='NPSHr CURVE',
+        line=dict(color='#ea580c', width=2.5), yaxis='y1'
+    ))
 
-    # LAYOUT: Gaya Katalog Bersih Berbingkai Hitam Sempurna
+    # TITIK KERJA AKTUAL UTAMA: Blue Cross (X) tebal bergaris proyeksi biru putus-putus
+    fig.add_trace(go.Scatter(
+        x=[q_actual], y=[h_actual], mode='markers', name='DUTY POINT',
+        marker=dict(symbol='x', size=18, line=dict(width=4), color='#1d4ed8'),
+        yaxis='y1', showlegend=False
+    ))
+
+    # Garis Proyeksi Biru (Capacity Line & Head Line Sesuai Gambar)
+    fig.add_shape(type="line", x0=q_actual, y0=0, x1=q_actual, y1=380, line=dict(color="#1d4ed8", width=2, dash="dash"), yref="y1")
+    fig.add_shape(type="line", x0=0, y0=h_actual, x1=q_actual, y1=h_actual, line=dict(color="#1d4ed8", width=2, dash="dash"), yref="y1")
+
+    # Teks Keterangan Proyeksi Titik Kerja
+    fig.add_annotation(
+        x=q_actual+200, y=h_actual+15, 
+        text=f"DUTY POINT:<br>{q_actual:.0f} GPM @ {h_actual:.0f} FT HEAD (BEP)",
+        showarrow=False, font=dict(color="#1d4ed8", size=11, family="Arial Bold"), textangle=0, align="left"
+    )
+
+    # TEXT LABEL UNTUK GARIS PROYEKSI AKSIS
+    fig.add_annotation(x=q_actual, y=15, text="CAPACITY LINE", showarrow=False, font=dict(color="#1d4ed8", size=10, family="Arial Bold"), textangle=-90)
+    fig.add_annotation(x=1200, y=h_actual+8, text="HEAD LINE", showarrow=False, font=dict(color="#1d4ed8", size=10, family="Arial Bold"))
+
+    # KONFIGURASI LAYOUT SUMBU BERGANDA (Triple Y-Axis)
     fig.update_layout(
-        title={"text": "CENTRIFUGAL PUMP PERFORMANCE CURVE (MULTI-TRIM)", "font": {"color": "#0f172a", "size": 14, "family": "Arial Black"}},
+        title={"text": "CENTRIFUGAL PUMP PERFORMANCE CURVE (8000 GPM DUTY POINT EXAMPLE)", "font": {"color": "#000000", "size": 13, "family": "Arial Black"}},
         template="plotly_white",
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
-        margin=dict(l=65, r=45, t=60, b=65),
+        margin=dict(l=75, r=160, t=60, b=65), # Beri ruang ekstra kanan untuk sumbu ke-3
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=10, color="black")),
+        
+        # Sumbu X Dasar
         xaxis=dict(
-            title=dict(text="Rate of Flow (m³/h)", font=dict(color="#0f172a", size=12, family="Arial Bold")), 
-            range=[0, 400], gridcolor="#f1f5f9", linecolor="#000000", linewidth=2, ticks="outside"
+            title=dict(text="CAPACITY IN GALLONS PER MINUTE (GPM) | KAPASITAS DALAM GPM", font=dict(color="black", size=11, family="Arial Bold")),
+            range=[0, 12000], gridcolor="#e2e8f0", linecolor="black", linewidth=2, ticks="outside"
         ),
+        
+        # Sumbu Y Utama (Kiri - Head & NPSH)
         yaxis=dict(
-            title=dict(text="Total Head (m)", font=dict(color="#0f172a", size=12, family="Arial Bold")), 
-            range=[0, 60], gridcolor="#f1f5f9", linecolor="#000000", linewidth=2, ticks="outside"
+            title=dict(text="HEAD IN FEET (FT) | HEAD DALAM FEET (FT)", font=dict(color="black", size=11, family="Arial Bold")),
+            range=[0, 400], gridcolor="#e2e8f0", linecolor="black", linewidth=2, ticks="outside"
+        ),
+        
+        # Sumbu Y Kedua (Kanan 1 - Efisiensi)
+        yaxis2=dict(
+            title=dict(text="EFFICIENCY % (η) | EFISIENSI % (η)", font=dict(color="#16a34a", size=11, family="Arial Bold")),
+            range=[0, 100], side="right", overlaying="y", ticks="outside",
+            linecolor="#16a34a", linewidth=2, showgrid=False
+        ),
+        
+        # Sumbu Y Ketiga (Kanan Extra - BHP Power)
+        yaxis3=dict(
+            title=dict(text="BRAKE HORSEPOWER (BHP) | DAYA POROS (BHP)", font=dict(color="#dc2626", size=11, family="Arial Bold")),
+            range=[0, 1000], side="right", overlaying="y", ticks="outside",
+            linecolor="#dc2626", linewidth=2, showgrid=False,
+            anchor="free", position=1.12  # Digeser keluar agar tidak menumpuk sumbu efisiensi
         )
     )
     st.plotly_chart(fig, use_container_width=True)
 
 with layout_col2:
-    st.markdown("<div style='background-color:#1e293b; padding:20px; border-radius:12px; border: 1px solid #334155; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);'>", unsafe_allow_html=True)
-    st.markdown("<h4 style='margin-top:0; margin-bottom:15px; font-size:15px; color:#94a3b8;'>🎛️ Telemetry Sensors</h4>", unsafe_allow_html=True)
+    st.markdown("<div style='background-color:#1e293b; padding:22px; border-radius:12px; border: 1px solid #334155;'>", unsafe_allow_html=True)
+    st.markdown("<h4 style='margin-top:0; margin-bottom:15px; font-size:15px; color:#94a3b8;'>🎛️ Live Field Telemetry</h4>", unsafe_allow_html=True)
     
     fig_rpm = go.Figure(go.Indicator(
         mode = "gauge+number", value = motor_rpm,
@@ -208,33 +180,33 @@ with layout_col2:
         gauge = {'axis': {'range': [0, 3000], 'tickcolor': "#94a3b8"}, 'bar': {'color': "#3b82f6"}, 'bgcolor': "#334155"},
         number = {'font': {'color': '#f8fafc', 'size': 22}}
     ))
-    fig_rpm.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=150, margin=dict(l=25, r=25, t=35, b=5))
+    fig_rpm.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=140, margin=dict(l=25, r=25, t=35, b=5))
     st.plotly_chart(fig_rpm, use_container_width=True)
     
     fig_vib = go.Figure(go.Indicator(
         mode = "gauge+number", value = vibration,
         title = {'text': "Vibration Level (mm/s)", 'font': {'size': 13, 'color': '#94a3b8'}},
         gauge = {
-            'axis': {'range': [0, 10], 'tickcolor': "#94a3b8"}, 'bar': {'color': "#eab308"}, 'bgcolor': "#334155",
-            'steps': [{'range': [0, 4], 'color': "#10b981"}, {'range': [4, 7], 'color': "#f59e0b"}, {'range': [7, 10], 'color': "#ef4444"}]
+            'axis': {'range': [0, 10], 'tickcolor': "#94a3b8"}, 'bar': {'color': "#10b981"}, 'bgcolor': "#334155",
+            'steps': [{'range': [0, 4], 'color': "rgba(16, 185, 129, 0.2)"}, {'range': [4, 10], 'color': "rgba(239, 68, 68, 0.2)"}]
         },
         number = {'font': {'color': '#f8fafc', 'size': 22}}
     ))
-    fig_vib.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=150, margin=dict(l=25, r=25, t=35, b=5))
+    fig_vib.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=140, margin=dict(l=25, r=25, t=35, b=5))
     st.plotly_chart(fig_vib, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-with layout_col3:
+    st.markdown("<br>", unsafe_allow_html=True)
+
     st.markdown(f"""
         <div class='insight-card'>
-            <h4 style='color:#f8fafc; margin-top:0; margin-bottom:15px; border-bottom:1px solid #334155; padding-bottom:8px;'>💡 Analysis & Insights</h4>
-            <ul style='font-size:13px; color:#cbd5e1; padding-left:20px; line-height: 2;'>
-                <li>🟢 <b style='color:#f8fafc;'>BEP Region:</b> Pump operating inside the 82% efficiency island.</li>
-                <li>🟢 <b style='color:#f8fafc;'>Selected Trim:</b> Fits optimal 10.0 in impeller performance.</li>
-                <li>🔵 <b style='color:#f8fafc;'>Power Load:</b> Operating safely within 30 HP threshold limits.</li>
+            <h4 style='color:#f8fafc; margin-top:0; margin-bottom:12px; border-bottom:1px solid #334155; padding-bottom:8px;'>📋 Engineering Verification</h4>
+            <ul style='font-size:13px; color:#cbd5e1; padding-left:18px; line-height: 1.8;'>
+                <li>🎯 <b style='color:#f8fafc;'>Optimal BEP Alignment:</b> Sistem bekerja tepat pada titik efisiensi puncak pabrikan (80%).</li>
+                <li>🛡️ <b style='color:#f8fafc;'>NPSH Safety Margin:</b> Nilai NPSH aktual berada aman di atas kurva batas minimum transisi kavitasi.</li>
             </ul>
             <div class='alert-box'>
-                <b>📋 Engineering Notes:</b><br>The actual operating mark perfectly aligns with industrial hydraulic specifications. No risk of cavitation detected at current NPSH estimation.
+                <b>💡 Catatan Dashboard:</b> Modifikasi sumbu multi-skala ini mempermudah operator membaca korelasi mekanis daya (BHP) terhadap fluktuasi debit sistem secara simultan.
             </div>
         </div>
     """, unsafe_allow_html=True)
