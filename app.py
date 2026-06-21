@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import pandas as pd
 
 # 1. KONFIGURASI HALAMAN
-st.set_page_config(page_title="HVAC Pump Performance Analyzer", layout="wide")
+st.set_page_config(page_title="HVAC Pump Performance Analyzer - HVAC T3", layout="wide")
 
 # 2. INJEKSI CSS GLOBAL (Premium Dark Theme untuk Dashboard, Grafik Kontras Tinggi)
 st.markdown("""
@@ -57,8 +57,8 @@ df_curves = pd.DataFrame({
 })
 edited_df = st.sidebar.data_editor(df_curves, num_rows="dynamic")
 
-# --- MAIN DASHBOARD ---
-st.markdown("<h1 style='color:#f8fafc; font-weight:700; margin-bottom:25px;'>📊 Pump Performance Analysis Dashboard</h1>", unsafe_allow_html=True)
+# --- MAIN DASHBOARD (Perubahan teks judul di sini) ---
+st.markdown("<h1 style='color:#f8fafc; font-weight:700; margin-bottom:25px;'>📊 Pump Performance Analysis Dashboard - HVAC T3</h1>", unsafe_allow_html=True)
 
 # Baris 1: Metric Cards
 col1, col2, col3, col4 = st.columns(4)
@@ -88,7 +88,7 @@ with layout_col1:
     
     fig = go.Figure()
 
-    # A. MULTI-DIMENSI IMPELLER CURVES (Warna disesuaikan agar kontras di latar putih)
+    # A. MULTI-DIMENSI IMPELLER CURVES
     trims = [
         {"name": "11.0 in", "factor": 1.20, "color": "#1e3a8a"},
         {"name": "10.5 in", "factor": 1.10, "color": "#2563eb"},
@@ -106,7 +106,7 @@ with layout_col1:
             showlegend=True
         ))
         
-        # PERBAIKAN: Anotasi teks impeller diangkat ke atas garis (yshift=8) agar tidak menabrak garis
+        # Anotasi teks impeller diangkat ke atas garis (yshift=9) agar tidak menabrak garis
         fig.add_annotation(
             x=25, y=y_vals[6], text=trim["name"],
             showarrow=False, yshift=9,
@@ -140,7 +140,7 @@ with layout_col1:
             showlegend=False
         ))
         
-        # PERBAIKAN: Teks efisiensi diberi bgcolor="white" agar garis di belakangnya terpotong bersih
+        # Teks efisiensi diberi bgcolor="white" agar garis di belakangnya terpotong bersih
         fig.add_annotation(
             x=x_rot[0], y=y_rot[0], text=eff["label"], 
             showarrow=False, font=dict(color="#047857", size=10, family="Arial Black"), 
@@ -158,7 +158,7 @@ with layout_col1:
             showlegend=False
         ))
         
-        # PERBAIKAN: Teks HP diberi kontras pelindung latar belakang putih
+        # Teks HP diberi kontras pelindung latar belakang putih
         if hp in [15, 25, 40]:
             fig.add_annotation(
                 x=320, y=h_hp[80], text=f"{hp} HP", 
