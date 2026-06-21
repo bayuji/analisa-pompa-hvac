@@ -6,7 +6,7 @@ import pandas as pd
 # 1. KONFIGURASI HALAMAN
 st.set_page_config(page_title="HVAC Pump Performance Analyzer", layout="wide")
 
-# 2. INJEKSI CSS GLOBAL (Premium Dark Theme & Anti Bocor Putih)
+# 2. INJEKSI CSS GLOBAL (Premium Dark Theme untuk Dashboard, Grafik Kontras Tinggi)
 st.markdown("""
     <style>
         [data-testid="stAppViewContainer"] { background-color: #0f172a !important; }
@@ -88,28 +88,32 @@ with layout_col1:
     
     fig = go.Figure()
 
-    # A. MULTI-DIMENSI IMPELLER CURVES
+    # A. MULTI-DIMENSI IMPELLER CURVES (Warna disesuaikan agar kontras di latar putih)
     trims = [
-        {"name": "11.0 in", "factor": 1.20, "color": "#3b82f6"},
-        {"name": "10.5 in", "factor": 1.10, "color": "#60a5fa"},
-        {"name": "10.0 in (Rated)", "factor": 1.00, "color": "#93c5fd"},
-        {"name": "9.5 in", "factor": 0.90, "color": "#a5f3fc"},
-        {"name": "9.0 in", "factor": 0.80, "color": "#22d3ee"}
+        {"name": "11.0 in", "factor": 1.20, "color": "#1e3a8a"},
+        {"name": "10.5 in", "factor": 1.10, "color": "#2563eb"},
+        {"name": "10.0 in (Rated)", "factor": 1.00, "color": "#3b82f6"},
+        {"name": "9.5 in", "factor": 0.90, "color": "#06b6d4"},
+        {"name": "9.0 in", "factor": 0.80, "color": "#0ea5e9"}
     ]
     
     for trim in trims:
-        # PERBAIKAN DI SINI: Menggunakan mode='lines+text' dan menaruh label di sisi kiri kurva (index 4)
-        text_labels = [trim["name"] if i == 4 else "" for i in range(len(q_plot))]
+        y_vals = h_base * trim["factor"]
         fig.add_trace(go.Scatter(
-            x=q_plot, y=h_base * trim["factor"],
-            mode='lines+text', name=trim["name"],
+            x=q_plot, y=y_vals,
+            mode='lines', name=trim["name"],
             line=dict(color=trim["color"], width=2.5),
-            text=text_labels,
-            textposition="top right",
-            textfont=dict(size=10, color="#cbd5e1")
+            showlegend=True
         ))
+        
+        # PERBAIKAN: Anotasi teks impeller diangkat ke atas garis (yshift=8) agar tidak menabrak garis
+        fig.add_annotation(
+            x=25, y=y_vals[6], text=trim["name"],
+            showarrow=False, yshift=9,
+            font=dict(size=10, color=trim["color"], family="Arial Black")
+        )
 
-    # B. EFFICIENCY ISLANDS (Kontur Lonjong di Pusat BEP)
+    # B. EFFICIENCY ISLANDS (Kontur Hijau dengan Pelindung Background Putih)
     bep_q, bep_h = 225, 35
     theta = np.linspace(0, 2*np.pi, 100)
     angle = -12 * np.pi / 180
@@ -132,10 +136,16 @@ with layout_col1:
         fig.add_trace(go.Scatter(
             x=x_rot, y=y_rot, mode='lines', 
             name=f"Eff {eff['label']}",
-            line=dict(color='#10b981', width=1.2, dash='dashdot'),
+            line=dict(color='#059669', width=1.3, dash='dashdot'),
             showlegend=False
         ))
-        fig.add_annotation(x=x_rot[0], y=y_rot[0], text=eff["label"], showarrow=False, font=dict(color="#10b981", size=10), bgcolor="#1e293b")
+        
+        # PERBAIKAN: Teks efisiensi diberi bgcolor="white" agar garis di belakangnya terpotong bersih
+        fig.add_annotation(
+            x=x_rot[0], y=y_rot[0], text=eff["label"], 
+            showarrow=False, font=dict(color="#047857", size=10, family="Arial Black"), 
+            bgcolor="white", bordercolor="#a7f3d0", borderwidth=1, borderpad=2
+        )
 
     # C. POWER DEMAND LINES (Garis Daya Kuda / HP)
     hp_lines = [10, 15, 20, 25, 30, 40]
@@ -147,33 +157,39 @@ with layout_col1:
             line=dict(color='#64748b', width=1, dash='dash'),
             showlegend=False
         ))
+        
+        # PERBAIKAN: Teks HP diberi kontras pelindung latar belakang putih
         if hp in [15, 25, 40]:
-            fig.add_annotation(x=320, y=h_hp[80]+1, text=f"{hp} HP", showarrow=False, font=dict(color="#94a3b8", size=9))
+            fig.add_annotation(
+                x=320, y=h_hp[80], text=f"{hp} HP", 
+                showarrow=False, font=dict(color="#475569", size=9, family="Arial Black"),
+                bgcolor="white", borderpad=1
+            )
 
-    # D. ACTUAL OPERATING POINT (Target Merah)
+    # D. ACTUAL OPERATING POINT (Target Lingkaran Merah Tebal)
     fig.add_trace(go.Scatter(
         x=[q_actual], y=[h_actual], mode='markers', name="Actual Point",
-        marker=dict(color='#ef4444', size=15, symbol='circle-open', line=dict(color='#ef4444', width=4))
+        marker=dict(color='#ef4444', size=16, symbol='circle-open', line=dict(color='#ef4444', width=4))
     ))
     fig.add_trace(go.Scatter(
         x=[q_actual], y=[h_actual], mode='markers', showlegend=False,
         marker=dict(color='#ef4444', size=6, symbol='circle')
     ))
     
-    # Crosshairs Proyeksi
+    # Crosshairs Proyeksi Merah Putus-putus
     fig.add_shape(type="line", x0=q_actual, y0=0, x1=q_actual, y1=h_actual, line=dict(color="#ef4444", width=1.5, dash="dot"))
     fig.add_shape(type="line", x0=0, y0=h_actual, x1=q_actual, y1=h_actual, line=dict(color="#ef4444", width=1.5, dash="dot"))
 
-    # Layout Sumbu & Desain Grafis
+    # PERBAIKAN PERUBAHAN TEMA: Menggunakan 'plotly_white' dengan warna grid abu-abu tipis
     fig.update_layout(
-        title={"text": "Manufacturer's Performance Curve (Multi-Trim & Efficiency Islands)", "font": {"color": "#f8fafc", "size": 15}},
-        template="plotly_dark",
-        paper_bgcolor="#1e293b",
-        plot_bgcolor="#1e293b",
+        title={"text": "Manufacturer's Performance Curve (Multi-Trim & Efficiency Islands)", "font": {"color": "#0f172a", "size": 15, "family": "Arial Black"}},
+        template="plotly_white",
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
         margin=dict(l=60, r=40, t=55, b=60),
-        xaxis=dict(title=dict(text="Rate of Flow (m³/h)", font=dict(color="#94a3b8")), range=[0, 400], gridcolor="#334155"),
-        yaxis=dict(title=dict(text="Total Head (m)", font=dict(color="#94a3b8")), range=[0, 60], gridcolor="#334155"),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, font=dict(size=10))
+        xaxis=dict(title=dict(text="Rate of Flow (m³/h)", font=dict(color="#1e293b", size=12, family="Arial Black")), range=[0, 400], gridcolor="#e2e8f0", linecolor="#cbd5e1"),
+        yaxis=dict(title=dict(text="Total Head (m)", font=dict(color="#1e293b", size=12, family="Arial Black")), range=[0, 60], gridcolor="#e2e8f0", linecolor="#cbd5e1"),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, font=dict(size=10, color="#1e293b"))
     )
     st.plotly_chart(fig, use_container_width=True)
 
