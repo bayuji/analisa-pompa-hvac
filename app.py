@@ -88,7 +88,7 @@ with layout_col1:
     
     fig = go.Figure()
 
-    # A. MEMBUAT MULTI-DIMENSI IMPELLER CURVES (Sesuai gambar katalog)
+    # A. MULTI-DIMENSI IMPELLER CURVES
     trims = [
         {"name": "11.0 in", "factor": 1.20, "color": "#3b82f6"},
         {"name": "10.5 in", "factor": 1.10, "color": "#60a5fa"},
@@ -98,18 +98,20 @@ with layout_col1:
     ]
     
     for trim in trims:
+        # PERBAIKAN DI SINI: Menggunakan mode='lines+text' dan menaruh label di sisi kiri kurva (index 4)
+        text_labels = [trim["name"] if i == 4 else "" for i in range(len(q_plot))]
         fig.add_trace(go.Scatter(
             x=q_plot, y=h_base * trim["factor"],
-            mode='lines', name=trim["name"],
+            mode='lines+text', name=trim["name"],
             line=dict(color=trim["color"], width=2.5),
-            text=[trim["name"] if i == 15 else None for i in range(len(q_plot))],
-            mode_text='text', textposition="top right"
+            text=text_labels,
+            textposition="top right",
+            textfont=dict(size=10, color="#cbd5e1")
         ))
 
-    # B. MEMBUAT EFFICIENCY ISLANDS (Kontur Lonjong Tertutup di Pusat BEP)
+    # B. EFFICIENCY ISLANDS (Kontur Lonjong di Pusat BEP)
     bep_q, bep_h = 225, 35
     theta = np.linspace(0, 2*np.pi, 100)
-    # Membuat rotasi kemiringan agar searah kurva pompa (-12 derajat)
     angle = -12 * np.pi / 180
     cos_a, sin_a = np.cos(angle), np.sin(angle)
     
@@ -124,7 +126,6 @@ with layout_col1:
     for eff in eff_islands:
         x_ellipse = eff["rx"] * np.cos(theta)
         y_ellipse = eff["ry"] * np.sin(theta)
-        # Transformasi Rotasi Kontur
         x_rot = bep_q + x_ellipse * cos_a - y_ellipse * sin_a
         y_rot = bep_h + x_ellipse * sin_a + y_ellipse * cos_a
         
@@ -134,13 +135,11 @@ with layout_col1:
             line=dict(color='#10b981', width=1.2, dash='dashdot'),
             showlegend=False
         ))
-        # Penamaan Teks Kontur di Grafik
         fig.add_annotation(x=x_rot[0], y=y_rot[0], text=eff["label"], showarrow=False, font=dict(color="#10b981", size=10), bgcolor="#1e293b")
 
-    # C. POWER DEMAND LINES (Garis Daya Kuda / HP berkurva naik)
+    # C. POWER DEMAND LINES (Garis Daya Kuda / HP)
     hp_lines = [10, 15, 20, 25, 30, 40]
     for hp in hp_lines:
-        # Pendekatan kurva daya industri: H = Konstanta / (Q + k)
         h_hp = (hp * 650) / (q_plot + 50)
         fig.add_trace(go.Scatter(
             x=q_plot, y=h_hp, mode='lines',
@@ -151,7 +150,7 @@ with layout_col1:
         if hp in [15, 25, 40]:
             fig.add_annotation(x=320, y=h_hp[80]+1, text=f"{hp} HP", showarrow=False, font=dict(color="#94a3b8", size=9))
 
-    # D. ACTUAL OPERATING POINT (Target Merah Tebal Sesuai Gambar Contoh)
+    # D. ACTUAL OPERATING POINT (Target Merah)
     fig.add_trace(go.Scatter(
         x=[q_actual], y=[h_actual], mode='markers', name="Actual Point",
         marker=dict(color='#ef4444', size=15, symbol='circle-open', line=dict(color='#ef4444', width=4))
@@ -161,11 +160,11 @@ with layout_col1:
         marker=dict(color='#ef4444', size=6, symbol='circle')
     ))
     
-    # Garis Proyeksi Operasi Silang (Crosshairs)
+    # Crosshairs Proyeksi
     fig.add_shape(type="line", x0=q_actual, y0=0, x1=q_actual, y1=h_actual, line=dict(color="#ef4444", width=1.5, dash="dot"))
     fig.add_shape(type="line", x0=0, y0=h_actual, x1=q_actual, y1=h_actual, line=dict(color="#ef4444", width=1.5, dash="dot"))
 
-    # Menata Layout Sumbu Ganda dan Format Grafis Pabrikan
+    # Layout Sumbu & Desain Grafis
     fig.update_layout(
         title={"text": "Manufacturer's Performance Curve (Multi-Trim & Efficiency Islands)", "font": {"color": "#f8fafc", "size": 15}},
         template="plotly_dark",
