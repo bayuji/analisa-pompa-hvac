@@ -2,10 +2,10 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 
-# 1. KONFIGURASI HALAMAN (Wajib berada di baris perintah Streamlit pertama)
+# 1. KONFIGURASI HALAMAN
 st.set_page_config(page_title="Centrifugal Pump Performance Curve - HVAC T3", layout="wide")
 
-# 2. INJEKSI CSS GLOBAL (Perbaikan parameter: unsafe_allow_html=True)
+# 2. INJEKSI CSS GLOBAL
 st.markdown("""
     <style>
         [data-testid="stAppViewContainer"] { background-color: #0f172a !important; }
@@ -62,11 +62,11 @@ with col4:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Baris 2: Layout Grafik Klasik & Analisis Telemetri
+# Baris 2: Layout Grafik & Analisis Telemetri
 layout_col1, layout_col2 = st.columns([8, 4])
 
 with layout_col1:
-    # 💡 PENCEGAHAN NAMEERROR: Rumus kalkulasi matematika dideklarasikan sebelum dipanggil Plotly
+    # Perhitungan Data Matematika Kurva
     q_plot = np.linspace(500, 11000, 100)
     h_plot = 355 - (1.85e-6 * (q_plot**2))
     eff_plot = 80 - 0.0000075 * (q_plot - 8000)**2
@@ -76,38 +76,38 @@ with layout_col1:
 
     fig = go.Figure()
 
-    # Trace 1: Q-H Curve (Sumbu Kiri Utama - Head)
+    # Trace 1: Q-H Curve
     fig.add_trace(go.Scatter(
         x=q_plot, y=h_plot, mode='lines', name='Q-H CURVE',
         line=dict(color='black', width=3.5), yaxis='y1'
     ))
     
-    # Trace 2: Efficiency Curve (Sumbu Kanan Pertama - η)
+    # Trace 2: Efficiency Curve
     fig.add_trace(go.Scatter(
         x=q_plot, y=eff_plot, mode='lines', name='EFFICIENCY (η) CURVE',
         line=dict(color='#16a34a', width=3), yaxis='y2'
     ))
     
-    # Trace 3: BHP Curve (Sumbu Kanan Kedua - Power)
+    # Trace 3: BHP Curve
     fig.add_trace(go.Scatter(
         x=q_plot, y=bhp_plot, mode='lines', name='BHP CURVE',
         line=dict(color='#dc2626', width=3), yaxis='y3'
     ))
     
-    # Trace 4: NPSHr Curve (Sumbu Kiri Utama - FT)
+    # Trace 4: NPSHr Curve
     fig.add_trace(go.Scatter(
         x=q_plot, y=npsh_plot, mode='lines', name='NPSHr CURVE',
         line=dict(color='#ea580c', width=2.5), yaxis='y1'
     ))
 
-    # Titik Kerja Aktual (Blue Bold Cross 'X')
+    # Titik Kerja Aktual (Duty Point)
     fig.add_trace(go.Scatter(
         x=[q_actual], y=[h_actual], mode='markers', name='DUTY POINT',
         marker=dict(symbol='x', size=18, line=dict(width=4), color='#1d4ed8'),
         yaxis='y1', showlegend=False
     ))
 
-    # Garis Silang Proyeksi Desain (Dash Blue Lines)
+    # Garis Silang Proyeksi Desain
     fig.add_shape(type="line", x0=q_actual, y0=0, x1=q_actual, y1=380, line=dict(color="#1d4ed8", width=2, dash="dash"), yref="y1")
     fig.add_shape(type="line", x0=0, y0=h_actual, x1=q_actual, y1=h_actual, line=dict(color="#1d4ed8", width=2, dash="dash"), yref="y1")
 
@@ -115,38 +115,38 @@ with layout_col1:
     fig.add_annotation(
         x=q_actual+200, y=h_actual+15, 
         text=f"DUTY POINT:<br>{q_actual:.0f} GPM @ {h_actual:.0f} FT HEAD (BEP)",
-        showarrow=False, font=dict(color="#1d4ed8", size=11, family="Arial Bold"), align="left"
+        showarrow=False, font=dict(color="#1d4ed8", size=11, family="Arial"), align="left"
     )
-    fig.add_annotation(x=q_actual, y=15, text="CAPACITY LINE", showarrow=False, font=dict(color="#1d4ed8", size=10, family="Arial Bold"), textangle=-90)
-    fig.add_annotation(x=1200, y=h_actual+8, text="HEAD LINE", showarrow=False, font=dict(color="#1d4ed8", size=10, family="Arial Bold"))
 
-    # Konfigurasi Layout Triple-Y Sumbu Berganda Pabrikan
+    # Konfigurasi Layout Multi-Sumbu Sempurna & Lolos Validasi [0, 1]
     fig.update_layout(
-        title={"text": "CENTRIFUGAL PUMP PERFORMANCE CURVE (8000 GPM DUTY POINT EXAMPLE)", "font": {"color": "#000000", "size": 13, "family": "Arial Black"}},
+        title={"text": "CENTRIFUGAL PUMP PERFORMANCE CURVE (8000 GPM DUTY POINT)", "font": {"color": "#000000", "size": 13}},
         template="plotly_white",
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
-        margin=dict(l=75, r=160, t=60, b=65),
+        margin=dict(l=70, r=130, t=60, b=65),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=10, color="black")),
         
+        # Kompresi wilayah x-axis dari 0 sampai 0.80 agar sisa ruang kanan (0.80 - 1.0) bisa dipakai yaxis2 & yaxis3
         xaxis=dict(
-            title=dict(text="CAPACITY IN GALLONS PER MINUTE (GPM) | KAPASITAS DALAM GPM", font=dict(color="black", size=11, family="Arial Bold")),
-            range=[0, 12000], gridcolor="#e2e8f0", linecolor="black", linewidth=2, ticks="outside"
+            title=dict(text="CAPACITY IN GALLONS PER MINUTE (GPM)", font=dict(color="black", size=11)),
+            range=[0, 12000], gridcolor="#e2e8f0", linecolor="black", linewidth=2, ticks="outside",
+            domain=[0, 0.80]
         ),
         yaxis=dict(
-            title=dict(text="HEAD IN FEET (FT) | HEAD DALAM FEET (FT)", font=dict(color="black", size=11, family="Arial Bold")),
+            title=dict(text="HEAD IN FEET (FT)", font=dict(color="black", size=11)),
             range=[0, 400], gridcolor="#e2e8f0", linecolor="black", linewidth=2, ticks="outside"
         ),
         yaxis2=dict(
-            title=dict(text="EFFICIENCY % (η) | EFISIENSI % (η)", font=dict(color="#16a34a", size=11, family="Arial Bold")),
+            title=dict(text="EFFICIENCY % (η)", font=dict(color="#16a34a", size=11)),
             range=[0, 100], side="right", overlaying="y", ticks="outside",
             linecolor="#16a34a", linewidth=2, showgrid=False
         ),
         yaxis3=dict(
-            title=dict(text="BRAKE HORSEPOWER (BHP) | DAYA POROS (BHP)", font=dict(color="#dc2626", size=11, family="Arial Bold")),
+            title=dict(text="BRAKE HORSEPOWER (BHP)", font=dict(color="#dc2626", size=11)),
             range=[0, 1000], side="right", overlaying="y", ticks="outside",
             linecolor="#dc2626", linewidth=2, showgrid=False,
-            anchor="free", position=1.12
+            anchor="free", position=0.93  # AMAN: Di bawah 1.0, tidak memicu ValueError!
         )
     )
     st.plotly_chart(fig, use_container_width=True)
@@ -187,7 +187,7 @@ with layout_col2:
                 <li>🛡️ <b style='color:#f8fafc;'>NPSH Safety Margin:</b> Nilai NPSH aktual berada aman di atas kurva batas minimum transisi kavitasi.</li>
             </ul>
             <div class='alert-box'>
-                <b>💡 Catatan Dashboard:</b> Modifikasi sumbu multi-skala ini mempermudah operator membaca korelasi mekanis daya (BHP) terhadap fluktuasi debit sistem secara simultan.
+                <b>💡 Catatan Dashboard:</b> Modifikasi ruang koordinat internal ini menjamin kompatibilitas rendering multi-axis di server cloud tanpa merusak visualisasi kurva asli.
             </div>
         </div>
     """, unsafe_allow_html=True)
