@@ -1,4 +1,4 @@
-App.py
+
 import plotly.graph_objects as go
 
 # --- PROSES GRAFIK INTERAKTIF DENGAN PLOTLY (Gaya Dark Mode) ---
