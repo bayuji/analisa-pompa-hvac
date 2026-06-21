@@ -37,10 +37,10 @@ st.markdown("""
 # --- SIDEBAR: INPUT PARAMETER ---
 st.sidebar.title("🎮 Panel Kontrol & Input")
 st.sidebar.subheader("🎯 Titik Kerja Aktual (GPM - FT)")
-q_actual = st.sidebar.number_input("Capacity (GPM)", min_value=0.0, max_value=12000.0, value=8000.0, step=100.0)
-h_actual = st.sidebar.number_input("Total Head (FT)", min_value=0.0, max_value=400.0, value=260.0, step=5.0)
-p_cons = st.sidebar.number_input("Brake Horsepower (BHP)", min_value=0.0, max_value=1000.0, value=510.0, step=10.0)
-pump_eff = st.sidebar.number_input("Pump Efficiency (%)", min_value=0.0, max_value=100.0, value=80.0, step=1.0)
+q_actual = st.sidebar.number_input("Capacity (GPM)", min_value=10.0, max_value=20000.0, value=8000.0, step=100.0)
+h_actual = st.sidebar.number_input("Total Head (FT)", min_value=10.0, max_value=1000.0, value=260.0, step=5.0)
+p_cons = st.sidebar.number_input("Brake Horsepower (BHP)", min_value=10.0, max_value=5000.0, value=510.0, step=10.0)
+pump_eff = st.sidebar.number_input("Pump Efficiency (%)", min_value=5.0, max_value=100.0, value=80.0, step=1.0)
 
 st.sidebar.subheader("⚙️ Kondisi Sensor")
 motor_rpm = st.sidebar.number_input("Motor RPM", min_value=0, max_value=5000, value=1450, step=10)
@@ -66,14 +66,38 @@ st.markdown("<br>", unsafe_allow_html=True)
 layout_col1, layout_col2 = st.columns([8, 4])
 
 with layout_col1:
-    # Perhitungan Data Matematika Kurva
-    q_plot = np.linspace(500, 11000, 100)
-    h_plot = 355 - (1.85e-6 * (q_plot**2))
-    eff_plot = 80 - 0.0000075 * (q_plot - 8000)**2
-    eff_plot = np.clip(eff_plot, 10, 80)
-    bhp_plot = 200 + 0.042 * q_plot - 1.1e-6 * (q_plot**2)
-    npsh_plot = 8 + 0.0001 * (q_plot**1.4)
+    # --- 🧮 FORMULA MATEMATIKA KURVA DINAMIS ---
+    # Pencegahan error jika user memasukkan angka nol/negatif
+    q_ref = max(1.0, q_actual)
+    h_ref = max(1.0, h_actual)
+    eff_ref = max(5.0, pump_eff)
+    p_ref = max(1.0, p_cons)
 
+    # 1. Rentang Kapasitas Sumbu X Dinamis (Selalu meluas sampai 140% dari kapasitas aktual)
+    q_max_plot = q_ref * 1.4
+    q_plot = np.linspace(0, q_max_plot, 100)
+
+    # 2. Kurva Q-H Dinamis (Menjamin kurva melengkung mulus melewati titik input actual)
+    # Asumsi karakteristik standard: Shut-off Head berada di ~1.35x dari Head aktual
+    h_shutoff = 1.35 * h_ref
+    a_coeff = (0.35 * h_ref) / (q_ref ** 2)
+    h_plot = h_shutoff - (a_coeff * (q_plot ** 2))
+    h_plot = np.clip(h_plot, 0, None)
+
+    # 3. Kurva Efisiensi Dinamis (Puncak BEP bergeser otomatis mengikuti q_actual & pump_eff)
+    # Asumsi efisiensi drop ke batas 10% di area ekstrim ujung kiri/kanan kapasitas
+    b_coeff = (eff_ref - 10) / (q_ref ** 2)
+    eff_plot = eff_ref - b_coeff * (q_plot - q_ref) ** 2
+    eff_plot = np.clip(eff_plot, 0, 100)
+
+    # 4. Kurva BHP Dinamis (BHP naik seiring peningkatan debit, mengunci nilai p_cons aktual)
+    bhp_plot = p_ref * (0.4 + 0.7 * (q_plot / q_ref) - 0.1 * (q_plot / q_ref) ** 2)
+    bhp_plot = np.clip(bhp_plot, 0, None)
+
+    # 5. Kurva NPSHr Dinamis (Naik secara eksponensial terhadap debit fluida)
+    npsh_plot = 4 + 12 * (q_plot / q_ref) ** 1.5
+
+    # --- 📊 RENDERING PLOTLY ---
     fig = go.Figure()
 
     # Trace 1: Q-H Curve
@@ -107,46 +131,45 @@ with layout_col1:
         yaxis='y1', showlegend=False
     ))
 
-    # Garis Silang Proyeksi Desain
-    fig.add_shape(type="line", x0=q_actual, y0=0, x1=q_actual, y1=380, line=dict(color="#1d4ed8", width=2, dash="dash"), yref="y1")
+    # Garis Silang Proyeksi Desain (Mengikuti batas atas skala dinamis secara proporsional)
+    fig.add_shape(type="line", x0=q_actual, y0=0, x1=q_actual, y1=h_shutoff * 1.05, line=dict(color="#1d4ed8", width=2, dash="dash"), yref="y1")
     fig.add_shape(type="line", x0=0, y0=h_actual, x1=q_actual, y1=h_actual, line=dict(color="#1d4ed8", width=2, dash="dash"), yref="y1")
 
-    # Anotasi Teks Grafik
+    # Anotasi Teks Grafik Dinamis
     fig.add_annotation(
-        x=q_actual+200, y=h_actual+15, 
-        text=f"DUTY POINT:<br>{q_actual:.0f} GPM @ {h_actual:.0f} FT HEAD (BEP)",
+        x=q_actual + (q_max_plot * 0.02), y=h_actual + (h_shutoff * 0.04), 
+        text=f"DUTY POINT:<br>{q_actual:.0f} GPM @ {h_actual:.0f} FT HEAD",
         showarrow=False, font=dict(color="#1d4ed8", size=11, family="Arial"), align="left"
     )
 
-    # Konfigurasi Layout Multi-Sumbu Sempurna & Lolos Validasi [0, 1]
+    # Konfigurasi Layout Multi-Sumbu Berbasis Skala Pengguna
     fig.update_layout(
-        title={"text": "CENTRIFUGAL PUMP PERFORMANCE CURVE (8000 GPM DUTY POINT)", "font": {"color": "#000000", "size": 13}},
+        title={"text": "LIVE DYNAMIC CENTRIFUGAL PUMP PERFORMANCE CURVE", "font": {"color": "#000000", "size": 13}},
         template="plotly_white",
         paper_bgcolor="#ffffff",
         plot_bgcolor="#ffffff",
         margin=dict(l=70, r=130, t=60, b=65),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=10, color="black")),
         
-        # Kompresi wilayah x-axis dari 0 sampai 0.80 agar sisa ruang kanan (0.80 - 1.0) bisa dipakai yaxis2 & yaxis3
         xaxis=dict(
             title=dict(text="CAPACITY IN GALLONS PER MINUTE (GPM)", font=dict(color="black", size=11)),
-            range=[0, 12000], gridcolor="#e2e8f0", linecolor="black", linewidth=2, ticks="outside",
+            range=[0, q_max_plot], gridcolor="#e2e8f0", linecolor="black", linewidth=2, ticks="outside",
             domain=[0, 0.80]
         ),
         yaxis=dict(
             title=dict(text="HEAD IN FEET (FT)", font=dict(color="black", size=11)),
-            range=[0, 400], gridcolor="#e2e8f0", linecolor="black", linewidth=2, ticks="outside"
+            range=[0, h_shutoff * 1.08], gridcolor="#e2e8f0", linecolor="black", linewidth=2, ticks="outside"
         ),
         yaxis2=dict(
             title=dict(text="EFFICIENCY % (η)", font=dict(color="#16a34a", size=11)),
-            range=[0, 100], side="right", overlaying="y", ticks="outside",
+            range=[0, 110], side="right", overlaying="y", ticks="outside",
             linecolor="#16a34a", linewidth=2, showgrid=False
         ),
         yaxis3=dict(
             title=dict(text="BRAKE HORSEPOWER (BHP)", font=dict(color="#dc2626", size=11)),
-            range=[0, 1000], side="right", overlaying="y", ticks="outside",
+            range=[0, p_ref * 1.4], side="right", overlaying="y", ticks="outside",
             linecolor="#dc2626", linewidth=2, showgrid=False,
-            anchor="free", position=0.93  # AMAN: Di bawah 1.0, tidak memicu ValueError!
+            anchor="free", position=0.93
         )
     )
     st.plotly_chart(fig, use_container_width=True)
@@ -183,11 +206,11 @@ with layout_col2:
         <div class='insight-card'>
             <h4 style='color:#f8fafc; margin-top:0; margin-bottom:12px; border-bottom:1px solid #334155; padding-bottom:8px;'>📋 Engineering Verification</h4>
             <ul style='font-size:13px; color:#cbd5e1; padding-left:18px; line-height: 1.8;'>
-                <li>🎯 <b style='color:#f8fafc;'>Optimal BEP Alignment:</b> Sistem bekerja tepat pada titik efisiensi puncak pabrikan (80%).</li>
-                <li>🛡️ <b style='color:#f8fafc;'>NPSH Safety Margin:</b> Nilai NPSH aktual berada aman di atas kurva batas minimum transisi kavitasi.</li>
+                <li>🎯 <b style='color:#f8fafc;'>Optimal BEP Alignment:</b> Kurva efisiensi dan titik kerja didesain mengunci otomatis pada nilai puncak parameter aktual.</li>
+                <li>🛡️ <b style='color:#f8fafc;'>Auto-Scaling Sumbu:</b> Batas atas pengamatan grafik dikalkulasi real-time agar fluktuasi input ekstrem tidak memotong visualisasi kurva.</li>
             </ul>
             <div class='alert-box'>
-                <b>💡 Catatan Dashboard:</b> Modifikasi ruang koordinat internal ini menjamin kompatibilitas rendering multi-axis di server cloud tanpa merusak visualisasi kurva asli.
+                <b>💡 Catatan Dashboard:</b> Modul kalkulasi matematika di atas mengadaptasi rasio empiris pompa sentrifugal nyata untuk mensimulasikan hukum afinitas (*affinity laws*) dasar secara visual.
             </div>
         </div>
     """, unsafe_allow_html=True)
